@@ -46,7 +46,7 @@ class NewsSearch extends News
 
         $path = Category::find()
             ->select('path')
-            ->where(['id' => $this->category_id])
+            ->where(['id' => (int)$this->category_id])
             ->scalar();
 
         if (empty($path)) {
@@ -60,8 +60,14 @@ class NewsSearch extends News
             ->alias('n')
             ->select('n.id, n.title, n.body')
             ->innerJoin("$categoryNews cn", 'cn.news_id = n.id')
-            ->innerJoin("$category c", 'c.id = cn.category_id')
-            ->where("c.path like '{$path}%'");
+            ->where(['cn.category_id' => (int)$this->category_id])
+            ->union(News::find()
+                ->alias('n')
+                ->select('n.id, n.title, n.body')
+                ->innerJoin("$categoryNews cn", 'cn.news_id = n.id')
+                ->innerJoin("$category c", 'c.id = cn.category_id')
+                ->where("c.path like '{$path}.%'")
+            );
 
         return new ActiveDataProvider([
             'query' => $query,
